@@ -373,6 +373,11 @@
     render();
   }
 
+  function clearTable() {
+    state.balls = [];
+    render();
+  }
+
   function reset() {
     state.whiteH = DEFAULT_WHITE;
     state.balls = DEFAULT_BALLS.map((b, i) => ({ id: i + 1, bx: b.bx, h: b.h }));
@@ -491,6 +496,7 @@
       else if (act === "above-plus") addBallOnSide("above");
       else if (act === "above-minus") removeLastOnSide("above");
       else if (act === "throw") throwRandom(10);
+      else if (act === "clear") clearTable();
       else if (act === "reset") reset();
     });
   });
