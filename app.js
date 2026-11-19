@@ -11,7 +11,7 @@
   const CANDIDATES = Array.from({ length: 100 }, (_, i) => (i + 1) / 100);
   const M = CANDIDATES.length;
   const PRIOR = 1 / M;
-  const MAX_TOTAL = 40;
+  const MAX_TOTAL = 100;
 
   const FELT = { x: 116, y: 52, w: 500, h: 280 };
 
@@ -58,6 +58,9 @@
   const chartDetail = document.getElementById("chartDetail");
   const announcer = document.getElementById("announcer");
   const lab = document.getElementById("lab");
+  const addButtons = document.querySelectorAll(
+    '[data-act="below-plus"], [data-act="above-plus"], [data-act="throw"]'
+  );
 
   const stats = {
     peak: document.getElementById("statPeak"),
@@ -173,6 +176,10 @@
     const uniform = maxP - PRIOR < 1e-9;
     const peak = uniform ? -1 : post.indexOf(maxP);
 
+    // adding is impossible once the table holds MAX_TOTAL balls
+    const full = state.balls.length >= MAX_TOTAL;
+    addButtons.forEach((btn) => { btn.disabled = full; });
+
     // numbers
     counts.below.textContent = String(below);
     counts.above.textContent = String(above);
@@ -213,7 +220,10 @@
       shine.setAttribute("opacity", "0.45");
 
       g.append(hit, dot, shine);
-      g.setAttribute("transform", `translate(${xForB(b.bx).toFixed(2)} ${yForH(b.h).toFixed(2)})`);
+      // Draw edge balls inside the felt; the white ball never goes below
+      // 0.04 or above 0.96, so this cannot flip a ball across the line.
+      const drawH = Math.min(0.965, Math.max(0.035, b.h));
+      g.setAttribute("transform", `translate(${xForB(b.bx).toFixed(2)} ${yForH(drawH).toFixed(2)})`);
       ballsGroup.append(g);
     }
 
@@ -366,7 +376,9 @@
 
   function throwRandom(n) {
     for (let i = 0; i < n && state.balls.length < MAX_TOTAL; i++) {
-      const h = 0.04 + Math.random() * 0.92;
+      // Height is uniform over the whole table, as the model assumes
+      // (P(below) = r). Only the drawing is kept clear of the rails.
+      const h = Math.random();
       const bx = 0.04 + Math.random() * 0.92;
       state.balls.push({ id: nextId++, bx, h });
     }
