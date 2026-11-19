@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bayes’ theorem, played out on a pool table</title>
+<meta name="description" content="An interactive explanation of Bayes’ theorem. Drop red balls on a pool table and watch the probability distribution for the hidden white ball update.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231c5c45'/%3E%3Ccircle cx='16' cy='16' r='7.5' fill='%23c24b3a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to the explanation</a>
+
+<header class="masthead">
+  <a class="wordmark" href="#top">Bayes at the pool table</a>
+  <nav class="nav" aria-label="Sections">
+    <a href="#idea">The idea</a>
+    <a href="#prior">Prior</a>
+    <a href="#likelihood">Likelihood</a>
+    <a href="#bayes">Bayes</a>
+    <a href="#lab">Try it</a>
+    <a href="#repeat">Repeat</a>
+  </nav>
+</header>
+
+<main id="main">
+
+  <!-- ============================================================ hero -->
+  <section class="hero" id="top">
+    <div class="hero-copy">
+      <h1>Bayes’ theorem, played out on a pool table</h1>
+      <p class="deck">A white ball is somewhere on the table and you cannot see it. Red balls land around it, and all you note is which side each one fell on. That one bit of information is enough to narrow down where the white ball must be.</p>
+      <a class="cta" href="#lab">Try the table</a>
+    </div>
+
+    <figure class="hero-figure">
+      <svg viewBox="0 0 560 340" role="img" aria-label="A pool table with a white ball and ten red balls scattered around it; seven red balls lie below the white ball and three above.">
+        <defs>
+          <radialGradient id="ballRedHero" cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stop-color="#f08a78"/>
+            <stop offset="55%" stop-color="#c24b3a"/>
+            <stop offset="100%" stop-color="#7f2a20"/>
+          </radialGradient>
+          <radialGradient id="ballWhiteHero" cx="35%" cy="28%" r="80%">
+            <stop offset="0%" stop-color="#fffdf6"/>
+            <stop offset="70%" stop-color="#efe9d8"/>
+            <stop offset="100%" stop-color="#c9c0a9"/>
+          </radialGradient>
+        </defs>
+        <rect x="14" y="14" width="532" height="312" rx="18" fill="#3f2c22"/>
+        <rect x="28" y="28" width="504" height="284" rx="10" fill="#1c5c45"/>
+        <g fill="#0b241b" opacity=".85">
+          <circle cx="34" cy="34" r="13"/><circle cx="263" cy="30" r="12"/><circle cx="526" cy="34" r="13"/>
+          <circle cx="34" cy="306" r="13"/><circle cx="263" cy="310" r="12"/><circle cx="526" cy="306" r="13"/>
+        </g>
+        <line x1="34" y1="132" x2="526" y2="132" stroke="#efe9d8" stroke-width="1.4" stroke-dasharray="7 7" opacity=".5"/>
+        <g fill="url(#ballRedHero)" stroke="#5e1d15" stroke-width=".8">
+          <circle cx="96" cy="250" r="10"/><circle cx="152" cy="210" r="10"/><circle cx="206" cy="266" r="10"/>
+          <circle cx="288" cy="238" r="10"/><circle cx="352" cy="180" r="10"/><circle cx="404" cy="262" r="10"/>
+          <circle cx="470" cy="216" r="10"/>
+          <circle cx="118" cy="68" r="10"/><circle cx="248" cy="86" r="10"/><circle cx="420" cy="72" r="10"/>
+        </g>
+        <circle cx="296" cy="132" r="13" fill="url(#ballWhiteHero)" stroke="#b3a98f" stroke-width=".8"/>
+      </svg>
+      <figcaption>Seven balls fell below the line, three above it. The white ball is hidden from the model, but not from you.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ============================================================ 1 -->
+  <section class="prose" id="idea">
+    <h2><span class="num">1</span>The central idea: learning from evidence</h2>
+    <p>Imagine a white ball resting somewhere on a pool table. Its exact vertical position is unknown to us.</p>
+    <p>We want to estimate where it is, but we cannot observe it directly. Instead, we throw several red balls onto the table and watch where they land relative to the white ball: below it, or above it.</p>
+    <p>The important observation is that <strong>the proportion of red balls landing below the white ball gives us information about its position.</strong></p>
+    <p>If most red balls land below it, the white ball is probably located relatively high on the table. If most land above it, the white ball is probably low.</p>
+    <p>This is the intuition behind Bayesian inference: using observations to improve our knowledge about something we cannot see.</p>
+  </section>
+
+  <!-- ============================================================ 2 -->
+  <section class="prose" id="prior">
+    <h2><span class="num">2</span>Starting with an initial belief: the prior</h2>
+    <p>Before throwing any red balls, we have no information about the white ball’s position. So we start with an initial assumption: all possible positions are equally likely.</p>
+    <p>Let’s call the unknown position of the white ball <var>R</var>. For the sake of simplicity, we use a discretized set of positions:</p>
+
+    <div class="eq" id="eq1">
+      <span class="eq-body"><span class="eq-expr"><var>R</var> ∈ {<var>r</var><sub>1</sub>, <var>r</var><sub>2</sub>, …, <var>r</var><sub>m</sub>},&nbsp;&nbsp;<var>r</var><sub>j</sub> ∈ [0, 1]</span></span>
+      <span class="eq-num">(1)</span>
+    </div>
+
+    <p>where each <var>r</var><sub>j</sub> represents a possible height, with the total height of the pool table set to 1.</p>
+    <p>If all positions are equally likely, the probability of the white ball being at any particular position is:</p>
+
+    <div class="eq" id="eq2">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>R</var> = <var>r</var><sub>j</sub>) = <span class="frac"><span class="num">1</span><span class="den"><var>m</var></span></span></span></span>
+      <span class="eq-num">(2)</span>
+    </div>
+
+    <p>For example, with 100 possible positions, each initially has a probability of 0.01.</p>
+    <p>This initial probability distribution is called the <strong>prior</strong>. It represents what we believe before taking new observations into account.</p>
+  </section>
+
+  <!-- ============================================================ 3 -->
+  <section class="prose" id="likelihood">
+    <h2><span class="num">3</span>Observations provide evidence: the likelihood</h2>
+    <p>We now throw red balls and observe their positions. For simplicity, let’s assign a value to each observation:</p>
+    <ul class="defs">
+      <li><var>X</var><sub>i</sub> = 1: the <var>i</var>-th red ball lands below the white ball.</li>
+      <li><var>X</var><sub>i</sub> = 0: the <var>i</var>-th red ball lands above the white ball.</li>
+    </ul>
+    <p>Suppose the white ball is at height <var>r</var>. The probability of a red ball landing below it is:</p>
+
+    <div class="eq" id="eq3">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>X</var><sub>i</sub> = 1 ∣ <var>R</var> = <var>r</var>) = <var>r</var></span></span>
+      <span class="eq-num">(3)</span>
+    </div>
+
+    <p>And the probability of landing above it is:</p>
+
+    <div class="eq" id="eq4">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>X</var><sub>i</sub> = 0 ∣ <var>R</var> = <var>r</var>) = 1 − <var>r</var></span></span>
+      <span class="eq-num">(4)</span>
+    </div>
+
+    <p>This makes intuitive sense: the higher the white ball is, the more likely a randomly placed red ball is to land below it.</p>
+    <p>Now imagine throwing <var>n</var> red balls. If <var>k</var> of them land below the white ball, the remaining <var>n</var> − <var>k</var> land above it. Assuming the throws are independent, the probability of observing this particular sequence is:</p>
+
+    <div class="eq" id="eq5">
+      <span class="eq-body"><span class="eq-expr">
+        <var>P</var>(<var>B</var> ∣ <var>R</var> = <var>r</var>) =
+        <span class="sum"><span class="lim">n</span><span class="sig">∏</span><span class="lim">i = 1</span></span>
+        <var>P</var>(<var>X</var><sub>i</sub> = <var>x</var><sub>i</sub> ∣ <var>R</var> = <var>r</var>) =
+        <var>r</var><sup>k</sup>(1 − <var>r</var>)<sup>n−k</sup>
+      </span></span>
+      <span class="eq-num">(5)</span>
+    </div>
+
+    <p>Here <var>B</var> is the set of observations we made, <var>r</var> is a possible position of the white ball, <var>k</var> is the number of red balls below it and <var>n</var> − <var>k</var> the number above it.</p>
+    <p>This probability is called the <strong>likelihood</strong>. It tells us how compatible our observations are with each possible position of the white ball: a higher likelihood means a position provides a better explanation for what we observed.</p>
+  </section>
+
+  <!-- ============================================================ 4 -->
+  <section class="prose" id="bayes">
+    <h2><span class="num">4</span>Updating our beliefs: Bayes’ theorem</h2>
+    <p>We now have two important pieces of information: our initial belief about the white ball’s position (the prior), and how well each possible position explains our observations (the likelihood).</p>
+    <p>Bayes’ theorem combines them to produce an updated probability distribution, called the <strong>posterior</strong>. The general equation is:</p>
+
+    <div class="eq" id="eq6">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>A</var> ∣ <var>B</var>) = <span class="frac"><span class="num"><var>P</var>(<var>B</var> ∣ <var>A</var>) <var>P</var>(<var>A</var>)</span><span class="den"><var>P</var>(<var>B</var>)</span></span></span></span>
+      <span class="eq-num">(6)</span>
+    </div>
+
+    <p>In our experiment, we can translate it into:</p>
+
+    <div class="eq" id="eq7">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>R</var> = <var>r</var> ∣ <var>B</var>) = <span class="frac"><span class="num"><var>P</var>(<var>B</var> ∣ <var>R</var> = <var>r</var>) <var>P</var>(<var>R</var> = <var>r</var>)</span><span class="den"><var>P</var>(<var>B</var>)</span></span></span></span>
+      <span class="eq-num">(7)</span>
+    </div>
+
+    <dl class="terms">
+      <dt><var>P</var>(<var>R</var> = <var>r</var> ∣ <var>B</var>)</dt>
+      <dd>the posterior — the probability that the white ball is at position <var>r</var>, given our observations.</dd>
+      <dt><var>P</var>(<var>B</var> ∣ <var>R</var> = <var>r</var>)</dt>
+      <dd>the likelihood — the probability of obtaining our observations if the white ball is at position <var>r</var>.</dd>
+      <dt><var>P</var>(<var>R</var> = <var>r</var>)</dt>
+      <dd>the prior — the initial probability of that position.</dd>
+      <dt><var>P</var>(<var>B</var>)</dt>
+      <dd>the evidence — the overall probability of obtaining our observations, considering all possible positions.</dd>
+    </dl>
+
+    <p>The evidence normalizes the result: it ensures that the probabilities of all possible positions add up to 1. It is calculated by considering every possible position, using the law of total probability and equation (5) for the likelihood:</p>
+
+    <div class="eq" id="eq8">
+      <span class="eq-body"><span class="eq-expr">
+        <var>P</var>(<var>B</var>) =
+        <span class="sum"><span class="lim">m</span><span class="sig">∑</span><span class="lim">j = 1</span></span>
+        <var>P</var>(<var>B</var> ∣ <var>R</var> = <var>r</var><sub>j</sub>) <var>P</var>(<var>R</var> = <var>r</var><sub>j</sub>) =
+        <span class="frac"><span class="num">1</span><span class="den"><var>m</var></span></span>
+        <span class="sum"><span class="lim">m</span><span class="sig">∑</span><span class="lim">j = 1</span></span>
+        <var>r</var><sub>j</sub><sup>k</sup>(1 − <var>r</var><sub>j</sub>)<sup>n−k</sup>
+      </span></span>
+      <span class="eq-num">(8)</span>
+    </div>
+
+    <p>The final result is therefore:</p>
+
+    <div class="eq eq-wide" id="eq9">
+      <span class="eq-body"><span class="eq-expr">
+        <var>P</var>(<var>R</var> = <var>r</var><sub>j</sub> ∣ <var>B</var>) =
+        <span class="frac"><span class="num"><var>r</var><sub>j</sub><sup>k</sup>(1 − <var>r</var><sub>j</sub>)<sup>n−k</sup></span><span class="den"><span class="sum"><span class="lim">m</span><span class="sig">∑</span><span class="lim">l = 1</span></span><var>r</var><sub>l</sub><sup>k</sup>(1 − <var>r</var><sub>l</sub>)<sup>n−k</sup></span></span>
+      </span></span>
+      <span class="eq-num">(9)</span>
+    </div>
+
+    <p>This equation gives us the updated probability of the white ball occupying each possible position.</p>
+  </section>
+
+  <!-- ============================================================ 5 -->
+  <section class="prose" id="example">
+    <h2><span class="num">5</span>A numerical example</h2>
+    <p>Let’s consider a simple experiment. Suppose the white ball can be located at one of a hundred possible heights, spaced 0.01 apart:</p>
+
+    <div class="eq">
+      <span class="eq-body"><span class="eq-expr"><var>R</var> ∈ {0.01, 0.02, 0.03, …, 1.00}</span></span>
+    </div>
+
+    <p>Before throwing any red balls, all hundred positions are equally likely, so the prior probability of each position is</p>
+
+    <div class="eq">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>R</var> = <var>r</var><sub>j</sub>) = <span class="frac"><span class="num">1</span><span class="den">100</span></span> = 0.01</span></span>
+    </div>
+
+    <p>Now we throw <var>n</var> = 10 red balls and observe <var>k</var> = 7 below the white ball and <var>n</var> − <var>k</var> = 3 above it. The likelihood of any possible position <var>r</var> becomes</p>
+
+    <div class="eq">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>B</var> ∣ <var>R</var> = <var>r</var>) = <var>r</var><sup>7</sup>(1 − <var>r</var>)<sup>3</sup></span></span>
+    </div>
+
+    <p>Let’s compare two of the hundred positions:</p>
+
+    <div class="compare">
+      <div class="compare-item">
+        <span class="compare-label">Position A, <var>r</var> = 0.3</span>
+        <span class="compare-value"><var>P</var>(<var>B</var> ∣ <var>R</var> = 0.3) = 0.3<sup>7</sup> · 0.7<sup>3</sup> = 0.0000750141</span>
+      </div>
+      <div class="compare-item compare-item--win">
+        <span class="compare-label">Position B, <var>r</var> = 0.7</span>
+        <span class="compare-value"><var>P</var>(<var>B</var> ∣ <var>R</var> = 0.7) = 0.7<sup>7</sup> · 0.3<sup>3</sup> = 0.0022235661</span>
+      </div>
+    </div>
+
+    <p>The second likelihood is about 29.64 times higher than the first. This means that observing seven red balls below and three above is much more compatible with the white ball being at height 0.7 than at height 0.3.</p>
+    <p>However, likelihood alone does not give us the final probability. We must also consider the prior and normalize across all possible positions. After doing this, we obtain the posterior distribution — and you can watch it happen below.</p>
+  </section>
+
+  <!-- ============================================================ lab -->
+  <section class="lab" id="lab" aria-labelledby="lab-title">
+    <div class="lab-head">
+      <h2 id="lab-title">The table</h2>
+      <p class="lab-note">Click the felt to drop a red ball exactly where you click. Click a ball to pick it up. Drag the white ball, or use the slider, to move it up or down.</p>
+    </div>
+
+    <div class="lab-toolbar">
+      <div class="controls">
+        <div class="stepper">
+          <span class="stepper-label" id="belowLabel">Balls below</span>
+          <div class="stepper-controls" role="group" aria-labelledby="belowLabel">
+            <button type="button" data-act="below-minus" aria-label="Remove a ball below the white ball">−</button>
+            <output id="countBelow" aria-live="off">7</output>
+            <button type="button" data-act="below-plus" aria-label="Add a ball below the white ball">+</button>
+          </div>
+        </div>
+        <div class="stepper">
+          <span class="stepper-label" id="aboveLabel">Balls above</span>
+          <div class="stepper-controls" role="group" aria-labelledby="aboveLabel">
+            <button type="button" data-act="above-minus" aria-label="Remove a ball above the white ball">−</button>
+            <output id="countAbove" aria-live="off">3</output>
+            <button type="button" data-act="above-plus" aria-label="Add a ball above the white ball">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="white-control">
+        <label for="whiteRange">White ball height</label>
+        <div class="white-control-row">
+          <input id="whiteRange" type="range" min="0.04" max="0.96" step="0.01" value="0.7">
+          <output id="whiteValue">0.70</output>
+        </div>
+      </div>
+    </div>
+
+    <div class="lab-grid">
+      <div class="table-wrap">
+        <svg id="poolTable" viewBox="0 0 640 366" role="group"
+             aria-label="Interactive pool table. Red balls can be added by clicking the felt. The count of balls above and below the white ball updates the posterior distribution.">
+          <defs>
+            <radialGradient id="ballRed" cx="34%" cy="28%" r="78%">
+              <stop offset="0%" stop-color="#f4917d"/>
+              <stop offset="52%" stop-color="#c24b3a"/>
+              <stop offset="100%" stop-color="#74251c"/>
+            </radialGradient>
+            <radialGradient id="ballWhite" cx="34%" cy="26%" r="82%">
+              <stop offset="0%" stop-color="#fffdf7"/>
+              <stop offset="68%" stop-color="#f0ead9"/>
+              <stop offset="100%" stop-color="#c3bAA4"/>
+            </radialGradient>
+            <filter id="ballShadow" x="-60%" y="-60%" width="220%" height="220%">
+              <feDropShadow dx="0" dy="2.2" stdDeviation="1.8" flood-color="#04140f" flood-opacity=".55"/>
+            </filter>
+            <linearGradient id="rail" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5a4030"/>
+              <stop offset="55%" stop-color="#46301f"/>
+              <stop offset="100%" stop-color="#332215"/>
+            </linearGradient>
+            <linearGradient id="felt" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#217055"/>
+              <stop offset="100%" stop-color="#14503a"/>
+            </linearGradient>
+          </defs>
+
+          <!-- gutter axis -->
+          <g id="gutterAxis" aria-hidden="true">
+            <line x1="100" y1="52" x2="100" y2="332" stroke="#efe9d8" stroke-opacity=".25"/>
+            <text x="8" y="57" class="svg-axis">1</text>
+            <text x="8" y="337" class="svg-axis">0</text>
+          </g>
+
+          <!-- table -->
+          <g id="tableFrame">
+            <rect x="100" y="36" width="532" height="312" rx="16" fill="url(#rail)"/>
+            <rect x="112" y="48" width="508" height="288" rx="9" fill="#0a2a20"/>
+            <rect id="felt" x="116" y="52" width="500" height="280" rx="6" fill="url(#felt)"/>
+            <g fill="#07110d">
+              <circle cx="112" cy="48" r="12"/><circle cx="366" cy="44" r="11"/>
+              <circle cx="624" cy="48" r="12"/><circle cx="112" cy="336" r="12"/>
+              <circle cx="366" cy="340" r="11"/><circle cx="624" cy="336" r="12"/>
+            </g>
+          </g>
+
+          <!-- posterior drawn against height -->
+          <g id="gutterBars" aria-hidden="true"></g>
+          <text class="svg-gutter-label" x="100" y="26" text-anchor="end">posterior</text>
+
+          <!-- height line -->
+          <line id="heightLine" x1="100" y1="136" x2="616" y2="136" stroke="#efe9d8" stroke-opacity=".55" stroke-width="1.3" stroke-dasharray="7 7" aria-hidden="true"/>
+
+          <!-- balls -->
+          <g id="balls"></g>
+
+          <!-- white ball -->
+          <g id="whiteBall" class="white-ball" tabindex="0" role="slider"
+             aria-label="Height of the white ball" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+            <circle r="15.5" fill="transparent"/>
+            <circle r="11" fill="url(#ballWhite)" stroke="#a99f88" stroke-width=".8" filter="url(#ballShadow)"/>
+            <circle r="3" cx="-3.4" cy="-3.8" fill="#fff" opacity=".85"/>
+          </g>
+
+          <!-- hover ghost -->
+          <circle id="ghostBall" r="9" fill="#f08a78" opacity="0" aria-hidden="true"/>
+        </svg>
+        <p class="table-caption">The bars on the left are the posterior over 100 candidate heights, plotted against height. The model sees only the red balls and the side of the line they fell on.</p>
+      </div>
+
+      <div class="panel">
+        <div class="chart" id="chart">
+          <div class="chart-y" id="chartY" aria-hidden="true"></div>
+          <div class="chart-plot" id="chartPlot">
+            <div class="gridlines" id="gridlines" aria-hidden="true"></div>
+            <div class="prior-line" id="priorLine" aria-hidden="true"><span>prior</span></div>
+            <div class="bars" id="bars"></div>
+          </div>
+          <div class="chart-x" id="chartX" aria-hidden="true"></div>
+        </div>
+
+        <p class="chart-detail" id="chartDetail">r = 0.70, likelihood 0.0022236, posterior 0.0294</p>
+
+        <div class="stats">
+          <div class="stat">
+            <span class="stat-label">Most likely height</span>
+            <strong class="stat-value" id="statPeak">0.70</strong>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Posterior there</span>
+            <strong class="stat-value" id="statPeakPost">0.0294</strong>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Balls thrown</span>
+            <strong class="stat-value" id="statTotal">10</strong>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn" data-act="throw">Throw 10 at random</button>
+          <button type="button" class="btn" data-act="reset">Reset the example</button>
+        </div>
+
+        <p class="sr-only" id="announcer" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 5b -->
+  <section class="prose prose-after-lab">
+    <p>For example, the position <var>r</var> = 0.7 has a likelihood of 0.0022235661, while the likelihoods of all hundred positions add up to 0.0757575841. Dividing the first number by the second gives the posterior probability of this position:</p>
+
+    <div class="eq">
+      <span class="eq-body"><span class="eq-expr"><var>P</var>(<var>R</var> = 0.7 ∣ <var>B</var>) = <span class="frac"><span class="num">0.0022235661</span><span class="den">0.0757575841</span></span> ≈ 0.02935</span></span>
+    </div>
+
+    <p>This is the height of the bar at <var>r</var> = 0.7. Before throwing the red balls, this position had a probability of 0.01; now it has 0.02935, about three times as much. Repeating the same calculation for the other positions gives the remaining bars, and all hundred probabilities add up to 1.</p>
+    <p>The most probable position is now <var>r</var> = 0.7. However, this does not mean that we know exactly where the white ball is. Other positions are still possible. <strong>We have simply used our observations to improve our initial belief about the position of the white ball.</strong></p>
+  </section>
+
+  <!-- ============================================================ 6 -->
+  <section class="prose" id="repeat">
+    <h2><span class="num">6</span>The process is iterative</h2>
+    <p>One particularly interesting aspect of Bayesian inference is that the process can be repeated. Imagine throwing another ten red balls after the first ten.</p>
+    <p>We can now use our previous posterior as our new prior, incorporate the additional observations, and calculate an updated posterior.</p>
+
+    <div class="flow" aria-label="Prior goes to posterior one, which goes to posterior two as more evidence arrives">
+      <span class="flow-node">Prior<sub>1</sub></span>
+      <span class="flow-edge">new evidence</span>
+      <span class="flow-node">Posterior<sub>1</sub></span>
+      <span class="flow-edge">more evidence</span>
+      <span class="flow-node flow-node--last">Posterior<sub>2</sub></span>
+    </div>
+
+    <p>In the lab above, keep adding balls and watch the bars concentrate on fewer heights. As more evidence becomes available, our understanding of the white ball’s position generally becomes more precise — looking at the second direction of the pool table, left to right, would sharpen it further still.</p>
+    <p>We are progressively reducing our uncertainty about something we cannot directly observe.</p>
+  </section>
+
+  <!-- ============================================================ 7 -->
+  <section class="prose" id="big-picture">
+    <h2><span class="num">7</span>The bigger picture</h2>
+    <p>The pool table experiment illustrates a much broader principle. Bayes’ theorem is about <strong>how to reason under uncertainty and how to update our beliefs when new information becomes available.</strong></p>
+    <p class="takeaway">We start with what we believe, observe what happens, evaluate how well our observations fit our assumptions, and update what we believe accordingly.</p>
+    <p>That is the fundamental idea behind Bayes’ theorem.</p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>Adapted from <a href="bayes_theorem_updated_2.md">bayes_theorem_updated_2.md</a>. A hundred candidate heights, 0.01 apart, with a uniform prior; everything else computed in the page.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
